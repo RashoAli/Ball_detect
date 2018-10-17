@@ -6,7 +6,7 @@ import cv2
 import imutils
 import time
 
-from Ball_funk import draw_rect, hand_histogram, draw_moving_rect, chek_x_y
+from Ball_funk import Ball_objekt
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -34,19 +34,24 @@ time.sleep(2.0)
 greenLower = (80, 40, 6)  # anfang werte fur die fabe
 greenUpper = (120, 255, 255)
 # Define the codec and create VideoWriter object
-
+# deklerait ball_Objekt
+Ball_1 = Ball_objekt()
 is_ball_hist_created = False
 # keep looping
 while True:
     frame = vs.read()
     if not is_ball_hist_created:
-        farme = draw_rect(frame, is_ball_hist_created)
-        hsv_data = hand_histogram(frame)
+        farme = Ball_1.draw_rect(frame, is_ball_hist_created)
+        hsv_data = Ball_1.hand_histogram(frame)
         pressed_key = cv2.waitKey(1)
         if pressed_key & 0xFF == ord('z'):
             greenLower = (hsv_data[0, 0], hsv_data[1, 0], hsv_data[2, 0])
             greenUpper = (hsv_data[0, 1], hsv_data[1, 1], hsv_data[2, 1])
             is_ball_hist_created = True
+    ''' re_calibration fals gebraucht wird '''
+    re_calibration_key = cv2.waitKey(1)
+    if re_calibration_key & 0xFF == ord('r'):
+        is_ball_hist_created = False
 
     # grab the current frame
     # handle the frame from VideoCapture or VideoStream
@@ -98,11 +103,11 @@ while True:
     # update HSV range
 
     if is_ball_hist_created:
-        draw_moving_rect(frame, x, y, radius)
-        Flag = chek_x_y(frame)
+        Ball_1.draw_moving_rect(frame, x, y, radius)
+        Flag = Ball_1.chek_x_y(frame)
         if not Flag:
-            frame = draw_rect(frame, is_ball_hist_created)
-            hsv_data = hand_histogram(frame)
+            frame = Ball_1.draw_rect(frame, is_ball_hist_created)
+            hsv_data = Ball_1.hand_histogram(frame)
             greenLower = (hsv_data[0, 0], hsv_data[1, 0], hsv_data[2, 0])
             greenUpper = (hsv_data[0, 1], hsv_data[1, 1], hsv_data[2, 1])
 
