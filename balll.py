@@ -1,18 +1,31 @@
 # import the necessary packages
-from collections import deque
 from imutils.video import VideoStream
-import numpy as np
-import argparse
 import cv2
-import imutils
 import time
-
-from Ball_funk import Ball_Objekt
+import matplotlib.pyplot as plt
+from Ball_funk import Ball_Objekt, mask_producer
+import numpy as np
 
 '''' beim angfang kay : c = calibrating
                         r = re_calibrating
                         q = end             '''
 
+slider_var = False
+
+if slider_var:
+    def nothing(x):
+        pass
+
+
+    # Create a black image, a window
+    temp_img = np.zeros((300, 512, 3), np.uint8)
+    cv2.namedWindow('image')
+
+    # create trackbars for color change
+    cv2.createTrackbar('H1', 'image', 0, 255, nothing)
+    cv2.createTrackbar('h1', 'image', 0, 255, nothing)
+    switch = '0 : OFF \n1 : ON'
+    cv2.createTrackbar(switch, 'image', 0, 1, nothing)
 
 vs = VideoStream(src=0).start()
 
@@ -26,6 +39,11 @@ Ball_1 = Ball_Objekt()
 is_ball_hist_created = False
 # keep looping
 while True:
+    if slider_var:
+        cv2.imshow('image', temp_img)
+        H1 = cv2.getTrackbarPos('H1', 'image')
+        h1 = cv2.getTrackbarPos('h1', 'image')
+
     frame = vs.read()
 
     # if we are viewing a video and we did not grab a frame,
@@ -35,11 +53,18 @@ while True:
 
     # resize the frame, blur it, and convert it to the HSV
     # color space
-    #frame = imutils.resize(frame, width=600)
+    # frame = imutils.resize(frame, width=600)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-    hsv[hsv[:, :, 0] < 50] = 0
-    hsv[hsv[:, :, 0] > 180] = 0
+    # plt.imshow(hsv)
+    # plt.show()
+    # mask_LAB = cv2.cvtColor(blurred, cv2.COLOR_BGR2LAB)
+    mask_HSV = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    Blau_mask, Blau_c = mask_producer(frame, mask_HSV, 'Blau')
+    Grun_mask, Grun_c = mask_producer(frame, mask_HSV, 'Grun')
+
+    cv2.imshow('Blau_mask', Blau_mask)
+    cv2.imshow('Grun_mask', Grun_mask)
 
     # check to calibrate the color borders
     if not is_ball_hist_created:
@@ -56,7 +81,6 @@ while True:
     if re_calibration_key & 0xFF == ord('r'):
         is_ball_hist_created = False
 
-
     # update HSV range
     if is_ball_hist_created:
         Ball_1.draw_moving_rect(frame)
@@ -67,7 +91,6 @@ while True:
             greenLower = (hsv_data[0, 0], hsv_data[1, 0], hsv_data[2, 0])
             greenUpper = (hsv_data[0, 1], hsv_data[1, 1], hsv_data[2, 1])
 
-
     # construct a mask for the color "green", then perform
     # a series of dilations and erosions to remove any small
     # blobs left in the mask
@@ -76,13 +99,8 @@ while True:
     mask = cv2.dilate(mask, None, iterations=2)
     # find contours in the mask and initialize the current
     # (x, y) center of the ball
-    center,radius = Ball_1.find_contur(mask)
-    if radius > 10:
-            # draw the circle and centroid on the frame,
-            # then update the list of tracked points
-            cv2.circle(frame, (int(center[0]), int(center[1])), int(radius),
-                       (0, 255, 255), 2)
-            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+    center, radius = Ball_1.find_contur(mask)
+
 
     # loop over the set of tracked points
     # show the frame to our screen

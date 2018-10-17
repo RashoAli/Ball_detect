@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import imutils
+from scipy import ndimage
 
 
 class Ball_Objekt():
@@ -89,6 +90,7 @@ class Ball_Objekt():
         data[1, 1] = np.median(roi[:, :, 1] + 60)
         data[2, 0] = np.median(roi[:, :, 2] - 50)
         data[2, 1] = np.median(roi[:, :, 2] + 50)
+        print(data)
         return data
 
     '''contur funktion das schwirigste und langweiligste'''
@@ -109,7 +111,39 @@ class Ball_Objekt():
             ((self.x_coordinate, self.y_coordinate), self.radius) = cv2.minEnclosingCircle(c)
             M = cv2.moments(c)
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+            self.distance = 1 / self.radius
         else:
             center = np.zeros((2, 1))
             self.radius = 0
+
         return center, self.radius
+
+
+def mask_producer(frame, mask_HSV, color):
+    mask = mask_HSV.copy()
+    if color == 'Blau':
+        blueLower = (90, 40, 6)  # anfang werte fur die fabe
+        blueUpper = (120, 255, 255)
+        mask = cv2.inRange(mask, blueLower, blueUpper)
+
+    if color == 'Grun':
+        greenLower = (55, 99, 80)  # anfang werte fur die fabe
+        greenUpper = (90, 200, 120)
+        mask = cv2.inRange(mask, greenLower, greenUpper)
+        kernel = np.ones((20, 20), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    mask = cv2.erode(mask, None, iterations=10)
+    mask = cv2.dilate(mask, None, iterations=10)
+
+    _, contours, _ = cv2.findContours(mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_TC89_L1)
+    centres = []
+    for c in contours:
+        # get the min area rect
+        ((x,y),r) = cv2.minEnclosingCircle(c)
+        cv2.circle(frame, (int(x), int(y)), int(r),
+                   (0, 255, 255), 2)
+        cv2.circle(frame, (int(x),int(y)), 5, (0, 0, 255), -1)
+        centres.append((int(x),int(y),int(r)))
+
+    return mask,centres
