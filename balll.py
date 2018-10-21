@@ -3,7 +3,7 @@ from imutils.video import VideoStream
 import cv2
 import time
 import matplotlib.pyplot as plt
-from Ball_funk import mask_producer, ObjektBall, circels
+from Ball_funk import mask_producer, coordinat_zu_ordnen
 import numpy as np
 
 '''' am Angfang kay : c = calibrating
@@ -36,6 +36,7 @@ greenUpper = (120, 255, 255)
 # Define the codec and create VideoWriter object
 # deklerait ball_Objekt
 is_ball_hist_created = False
+detected_Balls = []
 # keep looping
 while True:
     if slider_var:
@@ -48,22 +49,25 @@ while True:
     # then we have reached the end of the video
     if frame is None:
         break
-
+    """erzeug HSV,Gray masken um weitter die bälle zu finden"""
     median = cv2.medianBlur(frame, 5)
     mask_HSV = cv2.cvtColor(median, cv2.COLOR_BGR2HSV)
     mask_gray = cv2.cvtColor(median, cv2.COLOR_BGR2GRAY)
 
-    Blau_mask, Blau_c = mask_producer(mask_gray, mask_HSV, 'Blau')
-    #Grun_mask, Grun_c = mask_producer(frame, mask_HSV, 'Grun')
+    """finde wo das Ball(mittelpunkt ,Radius)"""
+    Blau_mask, Blau_c = mask_producer(frame, mask_HSV, 'Blau')  # mask,(x,y,r,distanz)
+    Grun_mask, Grun_c = mask_producer(frame, mask_HSV, 'Grun')
 
-    cv2.imshow('Blau_mask', Blau_mask)
-    # print(type(c),c)
-    # cv2.imshow('Grun_mask', Grun_mask)
+    """speicher die gefundene bälle in eine liste detected_Balls"""
+    if Blau_c != []:#wenn es Blaue ball gibt
+        detected_Balls = coordinat_zu_ordnen('Blau', Blau_c, detected_Balls)
+    if Grun_c != []:#wenn es Grune ball gibt
+        detected_Balls = coordinat_zu_ordnen('Grun', Grun_c, detected_Balls)
+
     cv2.imshow("Frame", frame)
-    # print(radius)
-    key = cv2.waitKey(1) & 0xFF
 
     # if the 'q' key is pressed, stop the loop
+    key = cv2.waitKey(1) & 0xFF
     if key == ord("q"):
         break
 
@@ -71,5 +75,6 @@ while True:
 # otherwise, release the camera
 else:
     vs.release()
+print(detected_Balls[0][0].x_coordinet, 'x', detected_Balls[0][0].y_coordinet, 'y', detected_Balls[0][0].color, 'color')
 # close all windows
 cv2.destroyAllWindows()
