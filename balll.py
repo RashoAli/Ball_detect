@@ -5,6 +5,8 @@ import time
 import matplotlib.pyplot as plt
 from Ball_funk import mask_producer, coordinat_zu_ordnen
 import numpy as np
+import matplotlib as mpl
+from mpl_toolkits.mplot3d import Axes3D
 
 '''' am Angfang kay : c = calibrating
                         r = re_calibrating
@@ -72,9 +74,23 @@ while True:
         break
 
 
-# otherwise, release the camera
-else:
-    vs.release()
-print(detected_Balls[0][0].x_coordinet, 'x', detected_Balls[0][0].y_coordinet, 'y', detected_Balls[0][0].color, 'color')
+
+
+temp_x = np.asarray(detected_Balls[0][0].x_coordinet)
+temp_y = np.asarray(detected_Balls[0][0].y_coordinet)
+temp_z = np.asarray(detected_Balls[0][0].distanc)
+
 # close all windows
+vs.stop()
 cv2.destroyAllWindows()
+
+# mpl.rcParams['legend.fontsize'] = 10
+#
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# ax.plot(temp_x, temp_y, temp_z, label='parametric curve')
+axes = plt.gca()
+axes.set_xlim([-320,320])
+axes.set_ylim([-240,240])
+plt.plot(temp_x,temp_y,'o')
+plt.show()
