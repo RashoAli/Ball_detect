@@ -5,19 +5,16 @@ import time
 import matplotlib.pyplot as plt
 from Ball_funk import mask_producer, coordinat_zu_ordnen
 import numpy as np
-import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
 
 '''' am Angfang kay : c = calibrating
                         r = re_calibrating
                         q = end             '''
 
-slider_var = False
+slider_var = False  # if True you can change H1,h1 variables dynamically
 
 if slider_var:
-    def nothing(x):
+    def nothing():
         pass
-
 
     # Create a black image, a window
     temp_img = np.zeros((300, 512, 3), np.uint8)
@@ -31,16 +28,17 @@ if slider_var:
 
 vs = VideoStream(src=0).start()
 
-# allow the camera or qqvideo file to warm up
+# allow the camera to warm up
 time.sleep(2.0)
-greenLower = (40, 40, 6)  # anfang werte fur die fabe
-greenUpper = (120, 255, 255)
-# Define the codec and create VideoWriter object
-# deklerait ball_Objekt
-is_ball_hist_created = False
+
 detected_Balls = []
+frame_number = 0
+
 # keep looping
 while True:
+    frame_number = frame_number + 1
+
+    """ bei assigning H1 and h1 to a variable it can be dynamically changed """
     if slider_var:
         cv2.imshow('image', temp_img)
         H1 = cv2.getTrackbarPos('H1', 'image')
@@ -51,46 +49,31 @@ while True:
     # then we have reached the end of the video
     if frame is None:
         break
+
     """erzeug HSV,Gray masken um weitter die bälle zu finden"""
     median = cv2.medianBlur(frame, 5)
     mask_HSV = cv2.cvtColor(median, cv2.COLOR_BGR2HSV)
     mask_gray = cv2.cvtColor(median, cv2.COLOR_BGR2GRAY)
 
     """finde wo das Ball(mittelpunkt ,Radius)"""
-    Blau_mask, Blau_c = mask_producer(frame, mask_HSV, 'Blau')  # mask,(x,y,r,distanz)
-    Grun_mask, Grun_c = mask_producer(frame, mask_HSV, 'Grun')
+    Blau_mask, Blau_c = mask_producer(frame, mask_HSV, 'Blau', frame_number)  # output -> mask,(x,y,r,distanz)
+    # Grun_mask, Grun_c = mask_producer(frame, mask_HSV, 'Grun',frame_number)
 
     """speicher die gefundene bälle in eine liste detected_Balls"""
-    if Blau_c != []:#wenn es Blaue ball gibt
+    if Blau_c != []:  # wenn es Blaue ball gibt
         detected_Balls = coordinat_zu_ordnen('Blau', Blau_c, detected_Balls)
-    if Grun_c != []:#wenn es Grune ball gibt
-        detected_Balls = coordinat_zu_ordnen('Grun', Grun_c, detected_Balls)
+    # if Grun_c != []: # wenn es Grune ball gibt
+    # detected_Balls = coordinat_zu_ordnen('Grun', Grun_c, detected_Balls)
 
+    """show the frame and other stuff"""
     cv2.imshow("Frame", frame)
+    cv2.imshow("Mask", Blau_mask)
 
     # if the 'q' key is pressed, stop the loop
     key = cv2.waitKey(1) & 0xFF
     if key == ord("q"):
         break
 
-
-
-
-temp_x = np.asarray(detected_Balls[0][0].x_coordinet)
-temp_y = np.asarray(detected_Balls[0][0].y_coordinet)
-temp_z = np.asarray(detected_Balls[0][0].distanc)
-
 # close all windows
 vs.stop()
 cv2.destroyAllWindows()
-
-# mpl.rcParams['legend.fontsize'] = 10
-#
-# fig = plt.figure()
-# ax = fig.gca(projection='3d')
-# ax.plot(temp_x, temp_y, temp_z, label='parametric curve')
-axes = plt.gca()
-axes.set_xlim([-320,320])
-axes.set_ylim([-240,240])
-plt.plot(temp_x,temp_y,'o')
-plt.show()
